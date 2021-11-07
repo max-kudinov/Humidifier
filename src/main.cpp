@@ -1,7 +1,9 @@
+// Automatic Humidifier program 
+
 #include <Arduino.h>
 #include <Adafruit_Sensor.h>
 #include <DHT.h>
-#define DISP595_BRIGHTNESS
+#define DISP595_BRIGHTNESS  // Needs to be defined before including SevenSegmentsDisp library
 #include <SevenSegmentsDisp.h>
 #include <TimerOne.h>
 
@@ -25,7 +27,6 @@ boolean lastFanState = HIGH;
 DHT dht(DHTPIN, DHTTYPE);
 Disp595 disp(DIO, SCLK, RCLK);
 
-
 void checkHumidity();
 void fanAdjust();
 
@@ -37,33 +38,35 @@ void setup() {
   disp.brightness(1);
 }
 
+// Main loop
+
 void loop() {
-  checkHumidity();
-  fanAdjust();
-  disp.tick();
+  checkHumidity();  // Read humidity level from the sensor and adjust vaporizer state
+  fanAdjust();      // Adjust fan speed from potentiometer
+  disp.tick();      // Refresh display indication
 }
 
 void checkHumidity() {
-  if(millis() - lastCheck >= INTERVAL) {
-    float humidity = dht.readHumidity();
-    disp.displayFloatAuto(humidity);
-    if(!vaporState && humidity < 37) vaporState = HIGH;
-    else if(vaporState && humidity > 43) vaporState = LOW;
-    if(lastVaporState != vaporState) digitalWrite(VAPORPIN, vaporState);
-    lastVaporState = vaporState;
-    lastCheck = millis();
+  if(millis() - lastCheck >= INTERVAL) {  // Do this in a time interval 
+    float humidity = dht.readHumidity();  // Read the mesurements
+    disp.displayFloatAuto(humidity);      // Output it to display
+    if(!vaporState && humidity < 37) vaporState = HIGH;      // Turn vaporizer on if it's currently off and humidity below 37%
+    else if(vaporState && humidity > 43) vaporState = LOW;   // Turn it off if it's on and humidity above 43%
+    if(lastVaporState != vaporState) digitalWrite(VAPORPIN, vaporState);  // Update if changed
+    lastVaporState = vaporState;  // Remember last state
+    lastCheck = millis();  // Reset timer
   }
 }
 
 void fanAdjust() {
-  if(vaporState) {
-    if(!lastFanState) lastFanState = HIGH;
-    int speed = analogRead(POTPIN);
-    speed = map(speed, 0, 1023, 200, 1023);
-    Timer1.pwm(FANSPIN, speed);
-    digitalWrite(LEDPIN, HIGH); 
+  if(vaporState) {  // Set fan speed if vaporizer is on
+    if(!lastFanState) lastFanState = HIGH;  // If fan was previously off remember that it's on 
+    int speed = analogRead(POTPIN);  // Read potentiometer state
+    speed = map(speed, 0, 1023, 200, 1023);  // Set minimum value as 200
+    Timer1.pwm(FANSPIN, speed);  // Set the speed
+    digitalWrite(LEDPIN, HIGH);  // Turn on LED
   }
-  else if(lastFanState) {
+  else if(lastFanState) {  // If vaporizer is off and fan was on, turn off the fan and LED
     Timer1.pwm(FANSPIN, 50);
     digitalWrite(LEDPIN, LOW);
     lastFanState = LOW;
