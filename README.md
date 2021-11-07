@@ -5,4 +5,3 @@ Automatic humidifier based on Arduino Nano, PlatformIO with Arduino framework an
 ![humidifier3](./images/picture3.jpg)
 ![humidifier4](./images/picture4.jpg)
 ![humidifier5](./images/picture5.jpg)
-![humidifier6](./images/picture6.jpg)
